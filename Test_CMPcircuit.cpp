@@ -20,8 +20,8 @@ cin >> y;
 
 //create bitset from long integers
 
-bitset<30> bs1(x);
-bitset<30> bs2(y);
+bitset<BIT_SIZE> bs1(x);
+bitset<BIT_SIZE> bs2(y);
 
 compare = CMPcircuit(bs1, bs2);
 

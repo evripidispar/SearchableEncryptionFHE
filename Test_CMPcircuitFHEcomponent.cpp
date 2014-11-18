@@ -9,6 +9,7 @@
 #include "CMPcircuit.h"
 
 
+
 int main(int argc, char **argv)
 {
     /* On our trusted system we generate a new key
@@ -63,88 +64,135 @@ int main(int argc, char **argv)
 
     //create bitset from long integers
 
-    bitset<30> bs1(x);
-    bitset<30> bs2(y);
+    bitset<BIT_SIZE> bs1(x);
+    bitset<BIT_SIZE> bs2(y);
 
     compare = CMPcircuit(bs1, bs2);
 
     vector<long> v1;
+    //int i = 0;
     int j = 1;
-    for (int i = 0; i< nslots ;  i++){ 
-        if (i<(nslots-30)){
+    for (int l = 0; l< nslots ;  l++){ 
+        if (l<(nslots-BIT_SIZE)){
             v1.push_back(0);
         }
         else{
-        v1.push_back(long (bs1[30-j]));
+        v1.push_back(long (bs1[BIT_SIZE-j]));
         j++;
     }
-    cout << v1[i];
+    cout << v1[l];
     }
     cout <<endl;
-  
-
-    Ctxt ct1(publicKey);
-    startFHEtimer("ea.encrypt1");
-    ea.encrypt(ct1, publicKey, v1);
-    stopFHEtimer("ea.encrypt1");
-        
-    vector<long> v2;
+  	
+  	vector<long> v2;
     int k = 1;
     for(int i = 0 ; i < nslots ; i++) {
-        if (i<(nslots-30)){
+        if (i<(nslots-BIT_SIZE)){
             v2.push_back(0);
         }
         else{
-        v2.push_back(long (bs2[30-k]));
+        v2.push_back(long (bs2[BIT_SIZE-k]));
         k++;
     }
     cout << v2[i];
     }
     cout <<endl;
 
-    Ctxt ct2(publicKey);
-    startFHEtimer("ea.encrypt2");
-    ea.encrypt(ct2, publicKey, v2);
+    
+    vector<long> zerovector(nslots,0);
+    vector<long> zerovector1(nslots-1,0);
+    
+    vector<Ctxt> Ctxtset1;
+  	vector<Ctxt> Ctxtset2;
+    
+    startFHEtimer("ea.encrypt1");
+    cout << "Bit size " << BIT_SIZE <<endl; 
+    unsigned int i=0;
+    
+    while(i<BIT_SIZE){
+    	long tmp1 = v1.back();
+    	v1.pop_back();
+    	zerovector1.push_back(tmp1);
+    	
+    	Ctxt tmpCtxt1(publicKey);
+    	//startFHEtimer("ea.encrypt1");
+    	ea.encrypt(tmpCtxt1, publicKey, zerovector1);
+    	//stopFHEtimer("ea.encrypt1");
+    	
+    	Ctxtset1.push_back(tmpCtxt1); 
+    	i++;
+    	zerovector1.pop_back();  		
+    }
+    
+    cout <<" Size of zerovector1 " << zerovector1.size() <<endl;
+    cout <<" Size of Ctxtset1 " << Ctxtset1.size() <<endl;
+    
+    stopFHEtimer("ea.encrypt1");
+    
+	
+	
+	startFHEtimer("ea.encrypt2");
+    i=0;
+    
+    while(i<BIT_SIZE){
+    	long tmp2 = v2.back();
+    	v2.pop_back();
+    	zerovector1.push_back(tmp2);
+    	
+    	Ctxt tmpCtxt2(publicKey);
+    	//startFHEtimer("ea.encrypt1");
+    	ea.encrypt(tmpCtxt2, publicKey, zerovector1);
+    	//stopFHEtimer("ea.encrypt1");
+    	
+    	Ctxtset2.push_back(tmpCtxt2); 
+    	i++;
+    	zerovector1.pop_back();  		
+    }
+    
+    cout <<" Size of zerovector1 " << zerovector1.size() <<endl;
+    cout <<" Size of Ctxtset2 " << Ctxtset2.size() <<endl;
+    
     stopFHEtimer("ea.encrypt2");
 
 
-    vector<long> carry;
-    for(int i = 0 ; i < nslots ; i++) {
-        carry.push_back(0);
-    }
-
-    Ctxt ct3(publicKey);
+    Ctxt tmpCtxt3(publicKey);
     startFHEtimer("ea.encrypt3");
-    ea.encrypt(ct3, publicKey, carry);
+    ea.encrypt(tmpCtxt3, publicKey, zerovector);
     stopFHEtimer("ea.encrypt3");
-
-    // v1.mul(v2); // c3.multiplyBy(c2) 
-    // ct2.multiplyBy(ct1);              
-    // CheckCtxt(ct2, "c3*=c2");
-    // debugCompare(ea,secretKey,v1,ct2);
 
     // On the public (untrusted) system we
     // can now perform our computation
-
-    Ctxt ctCMP = ct1;
+	
+	Ctxt ctCMP =  Ctxtset1[0];
+    Ctxt ctCarry = tmpCtxt3;
     //Ctxt ctProd = ct1;
 
     startFHEtimer("comparator");
-    ctCMP.CMPcircuit(ct2,ct3);
-
-    //ctCMP *= ct2;
-    stopFHEtimer("comparator");
+    
+    i = 0;
+    while(i < Ctxtset1.size()){
+    	cout << "flag";
+    	ctCMP = Ctxtset1[i];
+    	ctCMP.CMPcircuit(Ctxtset2[i],ctCarry);
+		cout << "Test" << endl;
+		ctCarry = ctCMP;
+		i++;
+    }
+    
+   	stopFHEtimer("comparator");
 
     vector<long> res;
 
     startFHEtimer("decryptsum");
-    ea.decrypt(ctCMP, secretKey, res);
+    ea.decrypt(ctCarry, secretKey, res);
     stopFHEtimer("decryptsum");
     
     cout <<res.size() <<endl;
-    for (unsigned int i = 0;i<res.size(); i++){
-        cout<< res[i];
-    }
+    i = 0;
+    while (i<res.size()){
+        	cout<< res[i];
+        	i++;
+    	}
     cout <<endl;
     cout << long(compare) << " = " << res[res.size()-1];
     printAllTimers();

@@ -5,6 +5,8 @@
 #include <bitset>
 #include <sstream>
 
+#define BIT_SIZE 6
+
 using namespace std;
 
 //extern bool c;
@@ -15,7 +17,7 @@ bool CMP1bit(bool x, bool y,bool c);
 
 //compute the comparison of two long integers
 
-bool CMPcircuit(bitset<30> bsx, bitset<30> bsy);
+bool CMPcircuit(bitset<BIT_SIZE> bsx, bitset<BIT_SIZE> bsy);
 
 
 #endif // _CMPcircuit_H_

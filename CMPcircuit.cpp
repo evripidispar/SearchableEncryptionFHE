@@ -5,7 +5,9 @@
 #include <bitset>
 #include "CMPcircuit.h"
 
+
 using namespace std;
+
 
 
 bool CMP1bit(bool x, bool y, bool c){
@@ -17,7 +19,7 @@ c_new = (((x^c)&(c^y))^x);
 return c_new;
 }
 
-bool CMPcircuit(bitset<30> bsx, bitset<30> bsy){
+bool CMPcircuit(bitset<BIT_SIZE> bsx, bitset<BIT_SIZE> bsy){
 
 bool c = 0;
 
